@@ -28,10 +28,11 @@ import {
   Share,
 } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import {
+import { 
   CommonActions,
   DefaultTheme,
   NavigationContainer,
+  useIsFocused,
   useFocusEffect,
   useNavigation,
 } from "@react-navigation/native";
@@ -1515,6 +1516,7 @@ function InsightsOverviewScreen({ navigation }) {
 
   const [hexagrams, setHexagrams] = useState([]);
   const [errorMessage, setErrorMessage] = useState(null);
+  const isFocused = useIsFocused();
   const {
     visible: guidanceVisible,
     hasSeenGuidance,
@@ -1535,6 +1537,12 @@ function InsightsOverviewScreen({ navigation }) {
       }
     }, [guidanceLoaded, guidanceVisible, hasSeenGuidance, openGuidance])
   );
+
+  useEffect(() => {
+    if (isFocused && guidanceLoaded && !hasSeenGuidance && !guidanceVisible) {
+      openGuidance();
+    }
+  }, [guidanceLoaded, guidanceVisible, hasSeenGuidance, isFocused, openGuidance]);
 
   useEffect(() => {
     let active = true;
@@ -1831,12 +1839,13 @@ const stylesInsights = StyleSheet.create({
   },
   container: {
     padding: theme.space(3),
-    paddingTop: theme.space(3) + screenTopPadding,
+    paddingTop: theme.space(5) + screenTopPadding,
   },
   screenTitle: {
     fontFamily: fonts.title,
     fontSize: 30,
     color: palette.ink,
+    marginTop: theme.space(0.5),
   },
   screenSubtitle: {
     fontFamily: fonts.body,
@@ -2872,7 +2881,7 @@ function HelpButton({ onPress }) {
       ]}
     >
       <Ionicons name="help-circle-outline" size={18} color={palette.white} />
-      <Text style={guidanceStyles.helpLabel}>Help</Text>
+      <Text style={guidanceStyles.helpLabel}>?</Text>
     </Pressable>
   );
 }
@@ -4107,6 +4116,7 @@ function GlowingHexagon() {
 function HomeScreen({ navigation, route }) {
   const [question, setQuestion] = useState("");
   const [menuVisible, setMenuVisible] = useState(false);
+  const isFocused = useIsFocused();
   const { session, profile, loadingProfile, signOut, refreshProfile } = useAuth();
   const { premiumActive: premiumEntitlementActive, coreActive: coreEntitlementActive } =
     useRevenueCat();
@@ -4184,6 +4194,18 @@ function HomeScreen({ navigation, route }) {
     }, [guidanceLoaded, guidanceVisible, hasSeenGuidance, openGuidance])
   );
 
+  useEffect(() => {
+    if (isFocused && guidanceLoaded && !hasSeenGuidance && !guidanceVisible) {
+      openGuidance();
+    }
+  }, [guidanceLoaded, guidanceVisible, hasSeenGuidance, isFocused, openGuidance]);
+
+  const handleSubmitQuestion = useCallback(() => {
+    const trimmed = question?.trim() || null;
+    navigation.navigate("Cast", { question: trimmed });
+    setQuestion("");
+  }, [navigation, question]);
+
   return (
     <GradientBackground>
       <KeyboardAvoidingView
@@ -4230,9 +4252,7 @@ function HomeScreen({ navigation, route }) {
 
                 <GoldButton
                   full
-                  onPress={() =>
-                    navigation.navigate("Cast", { question: question?.trim() || null })
-                  }
+                  onPress={handleSubmitQuestion}
                   icon={<Ionicons name="sparkles-outline" size={18} color={palette.white} />}
                 >
                   Submit
@@ -4447,6 +4467,7 @@ function CastScreen({ route, navigation }) {
   const [all, setAll] = useState([]);
   const [lines, setLines] = useState([]);
   const [isDone, setIsDone] = useState(false);
+  const isFocused = useIsFocused();
   const {
     visible: guidanceVisible,
     hasSeenGuidance,
@@ -4467,6 +4488,12 @@ function CastScreen({ route, navigation }) {
       }
     }, [guidanceLoaded, guidanceVisible, hasSeenGuidance, openGuidance])
   );
+
+  useEffect(() => {
+    if (isFocused && guidanceLoaded && !hasSeenGuidance && !guidanceVisible) {
+      openGuidance();
+    }
+  }, [guidanceLoaded, guidanceVisible, hasSeenGuidance, isFocused, openGuidance]);
 
   useEffect(() => {
     loadHexagrams().then(setAll);
@@ -4772,6 +4799,8 @@ const stylesCast = StyleSheet.create({
     fontSize: 26,
     color: palette.ink,
     marginBottom: 12,
+    textAlign: "right",
+    alignSelf: "flex-end",
   },
   subText: {
     fontFamily: fonts.body,
@@ -4893,6 +4922,7 @@ function ResultsScreen({ navigation, route }) {
     const [tab, setTab] = useState("Primary");
     const [show, setShow] = useState(false);
     const [selected, setSelected] = useState(null);
+    const isFocused = useIsFocused();
     const { addEntry } = useJournal();
     const {
       visible: primaryGuidanceVisible,
@@ -4911,6 +4941,7 @@ function ResultsScreen({ navigation, route }) {
 
     useEffect(() => {
       if (
+        isFocused &&
         primaryGuidanceLoaded &&
         tab === "Primary" &&
         !hasSeenPrimaryGuidance &&
@@ -4919,6 +4950,7 @@ function ResultsScreen({ navigation, route }) {
         openPrimaryGuidance();
       }
       if (
+        isFocused &&
         resultingGuidanceLoaded &&
         tab === "Resulting" &&
         !hasSeenResultingGuidance &&
@@ -4935,12 +4967,14 @@ function ResultsScreen({ navigation, route }) {
       openResultingGuidance,
       primaryGuidanceVisible,
       resultingGuidanceVisible,
+      isFocused,
       tab,
     ]);
 
     useFocusEffect(
       useCallback(() => {
         if (
+          isFocused &&
           primaryGuidanceLoaded &&
           !hasSeenPrimaryGuidance &&
           !primaryGuidanceVisible &&
@@ -4949,6 +4983,7 @@ function ResultsScreen({ navigation, route }) {
           openPrimaryGuidance();
         }
         if (
+          isFocused &&
           resultingGuidanceLoaded &&
           !hasSeenResultingGuidance &&
           !resultingGuidanceVisible &&
@@ -4965,6 +5000,7 @@ function ResultsScreen({ navigation, route }) {
         openResultingGuidance,
         primaryGuidanceVisible,
         resultingGuidanceVisible,
+        isFocused,
         tab,
       ])
     );
@@ -5105,6 +5141,8 @@ function ResultsScreen({ navigation, route }) {
     fontSize: 26,
     color: palette.ink,
     marginBottom: 12,
+    textAlign: "right",
+    alignSelf: "flex-end",
   },
   subText: {
     fontFamily: fonts.body,
@@ -5151,6 +5189,7 @@ function LibraryScreen({ navigation }) {
   const [selected, setSelected] = useState(null);
   const [search, setSearch] = useState("");
   const { width } = useWindowDimensions();
+  const isFocused = useIsFocused();
   const {
     visible: guidanceVisible,
     hasSeenGuidance,
@@ -5171,6 +5210,12 @@ function LibraryScreen({ navigation }) {
       }
     }, [guidanceLoaded, guidanceVisible, hasSeenGuidance, openGuidance])
   );
+
+  useEffect(() => {
+    if (isFocused && guidanceLoaded && !hasSeenGuidance && !guidanceVisible) {
+      openGuidance();
+    }
+  }, [guidanceLoaded, guidanceVisible, hasSeenGuidance, isFocused, openGuidance]);
 
   useEffect(() => {
     let active = true;
@@ -5318,6 +5363,8 @@ const stylesLibrary = StyleSheet.create({
     fontSize: 26,
     color: palette.ink,
     marginBottom: 6,
+    textAlign: "right",
+    alignSelf: "flex-end",
   },
   subtitle: {
     fontFamily: fonts.body,
@@ -5364,6 +5411,7 @@ function JournalListScreen({ navigation, route }) {
   const [search, setSearch] = useState("");
   const [highlightId, setHighlightId] = useState(null);
   const listRef = useRef(null);
+  const isFocused = useIsFocused();
   const {
     visible: guidanceVisible,
     hasSeenGuidance,
@@ -5384,6 +5432,12 @@ function JournalListScreen({ navigation, route }) {
       }
     }, [guidanceLoaded, guidanceVisible, hasSeenGuidance, openGuidance])
   );
+
+  useEffect(() => {
+    if (isFocused && guidanceLoaded && !hasSeenGuidance && !guidanceVisible) {
+      openGuidance();
+    }
+  }, [guidanceLoaded, guidanceVisible, hasSeenGuidance, isFocused, openGuidance]);
 
   const goHome = () => {
     const tabNav = navigation.getParent();
@@ -5527,6 +5581,8 @@ const stylesJournal = StyleSheet.create({
     fontSize: 26,
     color: palette.ink,
     marginBottom: theme.space(2),
+    textAlign: "right",
+    alignSelf: "flex-end",
   },
   searchBar: {
     flexDirection: "row",
