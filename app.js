@@ -2174,32 +2174,44 @@ function useGuidanceOnce(storageKey, options = {}) {
 
   useEffect(() => {
     let active = true;
-    const checkGuidance = async () => {
+    (async () => {
       try {
         const storedValue = await AsyncStorage.getItem(storageKey);
-        const alreadySeen = storedValue === "true";
         if (!active) return;
-        setHasSeenGuidance(alreadySeen);
-        if (!alreadySeen && autoShow) {
-          setVisible(true);
-          await AsyncStorage.setItem(storageKey, "true");
-          if (active) {
-            setHasSeenGuidance(true);
-          }
-        }
+        setHasSeenGuidance(storedValue === "true");
+      } catch (error) {
+        console.log("Guidance flag error:", error?.message || error);
+      } finally {
         if (active) {
           setHasLoaded(true);
         }
-      } catch (error) {
-        console.log("Guidance flag error:", error?.message || error);
       }
-    };
-
-    checkGuidance();
+    })();
     return () => {
       active = false;
     };
-  }, [autoShow, storageKey]);
+  }, [storageKey]);
+
+  useEffect(() => {
+    let active = true;
+    const maybeAutoShow = async () => {
+      if (!hasLoaded || hasSeenGuidance || !autoShow || visible) return;
+      setVisible(true);
+      try {
+        await AsyncStorage.setItem(storageKey, "true");
+        if (active) {
+          setHasSeenGuidance(true);
+        }
+      } catch (error) {
+        console.log("Guidance auto-show error:", error?.message || error);
+      }
+    };
+
+    maybeAutoShow();
+    return () => {
+      active = false;
+    };
+  }, [autoShow, hasLoaded, hasSeenGuidance, storageKey, visible]);
 
   const openGuidance = useCallback(() => {
     setVisible(true);
@@ -4098,9 +4110,13 @@ function HomeScreen({ navigation, route }) {
   const { session, profile, loadingProfile, signOut, refreshProfile } = useAuth();
   const { premiumActive: premiumEntitlementActive, coreActive: coreEntitlementActive } =
     useRevenueCat();
-  const { visible: guidanceVisible, openGuidance, closeGuidance } = useGuidanceOnce(
-    "hasSeenGuidance_Home"
-  );
+  const {
+    visible: guidanceVisible,
+    hasSeenGuidance,
+    hasLoaded: guidanceLoaded,
+    openGuidance,
+    closeGuidance,
+  } = useGuidanceOnce("hasSeenGuidance_Home");
 
   const handleGuidanceLearnMore = useCallback(() => {
     closeGuidance();
@@ -4159,6 +4175,14 @@ function HomeScreen({ navigation, route }) {
       Alert.alert("Logout failed", error?.message || "Please try again.");
     }
   }, [signOut]);
+
+  useFocusEffect(
+    useCallback(() => {
+      if (guidanceLoaded && !hasSeenGuidance && !guidanceVisible) {
+        openGuidance();
+      }
+    }, [guidanceLoaded, guidanceVisible, hasSeenGuidance, openGuidance])
+  );
 
   return (
     <GradientBackground>
