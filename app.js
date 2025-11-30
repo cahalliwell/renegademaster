@@ -2154,7 +2154,8 @@ function fullChangingLineSummaries(hex) {
 }
 
 // 🧭 Guidance helpers
-function useGuidanceOnce(storageKey) {
+function useGuidanceOnce(storageKey, options = {}) {
+  const { autoShow = true } = options;
   const [visible, setVisible] = useState(false);
   const [hasSeenGuidance, setHasSeenGuidance] = useState(false);
 
@@ -2166,7 +2167,7 @@ function useGuidanceOnce(storageKey) {
         const alreadySeen = storedValue === "true";
         if (!active) return;
         setHasSeenGuidance(alreadySeen);
-        if (!alreadySeen) {
+        if (!alreadySeen && autoShow) {
           setVisible(true);
           await AsyncStorage.setItem(storageKey, "true");
           if (active) {
@@ -2182,9 +2183,15 @@ function useGuidanceOnce(storageKey) {
     return () => {
       active = false;
     };
-  }, [storageKey]);
+  }, [autoShow, storageKey]);
 
-  const openGuidance = useCallback(() => setVisible(true), []);
+  const openGuidance = useCallback(() => {
+    setVisible(true);
+    if (!hasSeenGuidance) {
+      AsyncStorage.setItem(storageKey, "true").catch(() => {});
+      setHasSeenGuidance(true);
+    }
+  }, [hasSeenGuidance, storageKey]);
   const closeGuidance = useCallback(() => setVisible(false), []);
 
   return { visible, hasSeenGuidance, openGuidance, closeGuidance };
@@ -4500,16 +4507,16 @@ function CastScreen({ route, navigation }) {
                 Manual Casting
               </GoldButton>
             ) : (
-            <UpgradeCallout
-              title="Manual casting is a Premium ritual"
-              description={
-                premiumPriceString
-                  ? `Unlock tactile casting methods, AI summaries, and deeper insights with Premium for ${premiumPriceString} per month.`
-                  : "Unlock tactile casting methods, AI summaries, and deeper insights with Premium membership."
-              }
-              onUpgrade={startPremiumPurchase}
-              icon="keypad-outline"
-            />
+              <UpgradeCallout
+                title="Manual casting is a Premium ritual"
+                description={
+                  premiumPriceString
+                    ? `Unlock tactile casting methods, AI summaries, and deeper insights with Premium for ${premiumPriceString} per month.`
+                    : "Unlock tactile casting methods, AI summaries, and deeper insights with Premium membership."
+                }
+                onUpgrade={startPremiumPurchase}
+                icon="keypad-outline"
+              />
             )
           ) : null}
 
@@ -4828,20 +4835,54 @@ const stylesManual = StyleSheet.create({
 
 // 🧘 Results screen
 function ResultsScreen({ navigation, route }) {
-  const { question, primary, resulting, primaryLines, resultingLines } =
-    route.params || {};
-  const [tab, setTab] = useState("Primary");
-  const [show, setShow] = useState(false);
-  const [selected, setSelected] = useState(null);
-  const { addEntry } = useJournal();
-  const { visible: guidanceVisible, openGuidance, closeGuidance } = useGuidanceOnce(
-    "hasSeenGuidance_Resulting"
-  );
+    const { question, primary, resulting, primaryLines, resultingLines } =
+      route.params || {};
+    const [tab, setTab] = useState("Primary");
+    const [show, setShow] = useState(false);
+    const [selected, setSelected] = useState(null);
+    const { addEntry } = useJournal();
+    const {
+      visible: primaryGuidanceVisible,
+      hasSeenGuidance: hasSeenPrimaryGuidance,
+      openGuidance: openPrimaryGuidance,
+      closeGuidance: closePrimaryGuidance,
+    } = useGuidanceOnce("hasSeenGuidance_Primary", { autoShow: false });
+    const {
+      visible: resultingGuidanceVisible,
+      hasSeenGuidance: hasSeenResultingGuidance,
+      openGuidance: openResultingGuidance,
+      closeGuidance: closeResultingGuidance,
+    } = useGuidanceOnce("hasSeenGuidance_Resulting", { autoShow: false });
 
-  const handleGuidanceLearnMore = useCallback(() => {
-    closeGuidance();
-    navigation.navigate("Guide");
-  }, [closeGuidance, navigation]);
+    useEffect(() => {
+      if (tab === "Primary" && !hasSeenPrimaryGuidance && !primaryGuidanceVisible) {
+        openPrimaryGuidance();
+      }
+      if (
+        tab === "Resulting" &&
+        !hasSeenResultingGuidance &&
+        !resultingGuidanceVisible
+      ) {
+        openResultingGuidance();
+      }
+    }, [
+      hasSeenPrimaryGuidance,
+      hasSeenResultingGuidance,
+      openPrimaryGuidance,
+      openResultingGuidance,
+      primaryGuidanceVisible,
+      resultingGuidanceVisible,
+      tab,
+    ]);
+
+    const handleGuidanceLearnMore = useCallback(() => {
+      if (tab === "Resulting") {
+        closeResultingGuidance();
+      } else {
+        closePrimaryGuidance();
+      }
+      navigation.navigate("Guide");
+    }, [closePrimaryGuidance, closeResultingGuidance, navigation, tab]);
 
   const openReading = (hex, lines, variant) => {
     if (!hex) return;
@@ -4876,87 +4917,95 @@ function ResultsScreen({ navigation, route }) {
     }
   };
 
-  return (
-    <GradientBackground>
-      <SafeAreaView style={{ flex: 1 }}>
-        <HelpButton onPress={openGuidance} />
-        <ScrollView
-          contentContainerStyle={{
-            paddingHorizontal: theme.space(2.5),
-            paddingBottom: theme.space(3),
-            paddingTop: theme.space(2.5) + screenTopPadding,
-          }}
-        >
-          <Text style={stylesResults.sectionTitle}>Results</Text>
-          {question ? (
-            <>
-              <Text style={stylesResults.subText}>Question</Text>
-              <View style={stylesResults.questionBox}>
-                <Text style={stylesResults.questionText}>{question}</Text>
-              </View>
-            </>
-          ) : null}
-
-          <View style={stylesResults.tabs}>
-            {["Primary", "Resulting"].map((tabName) => {
-              const active = tab === tabName;
-              return (
-                <Pressable
-                  key={tabName}
-                  onPress={() => setTab(tabName)}
-                  style={[stylesResults.tabBtn, active && { backgroundColor: palette.gold }]}
-                >
-                  <Text style={[stylesResults.tabText, active && { color: palette.white }]}>
-                    {tabName}
-                  </Text>
-                </Pressable>
-              );
-            })}
-          </View>
-
-          {tab === "Primary" ? (
-            <HexagramCard
-              item={primary}
-              onPress={() => openReading(primary, primaryLines, "primary")}
-            />
-          ) : (
-            <HexagramCard
-              item={resulting}
-              onPress={() => openReading(resulting, resultingLines, "resulting")}
-            />
-          )}
-
-          {primary ? (
-            <GoldButton
-              full
-              onPress={handleJournal}
-              icon={<Ionicons name="create-outline" size={18} color={palette.white} />}
-            >
-              Add to Journal
-            </GoldButton>
-          ) : null}
-
-          <ReadingModal
-            visible={show}
-            onClose={() => setShow(false)}
-            hex={selected?.hex}
-            lines={selected?.lines || []}
-            variant={selected?.variant}
-            changingSummaries={selected?.changingSummaries || []}
+    return (
+      <GradientBackground>
+        <SafeAreaView style={{ flex: 1 }}>
+          <HelpButton
+            onPress={tab === "Resulting" ? openResultingGuidance : openPrimaryGuidance}
           />
-        </ScrollView>
-        <SimpleGuidanceModal
-          visible={guidanceVisible}
-          onClose={closeGuidance}
-          onLearnMore={handleGuidanceLearnMore}
-          text={GUIDANCE_MESSAGES.Resulting}
-        />
-      </SafeAreaView>
-    </GradientBackground>
-  );
-}
+          <ScrollView
+            contentContainerStyle={{
+              paddingHorizontal: theme.space(2.5),
+              paddingBottom: theme.space(3),
+              paddingTop: theme.space(2.5) + screenTopPadding,
+            }}
+          >
+            <Text style={stylesResults.sectionTitle}>Results</Text>
+            {question ? (
+              <>
+                <Text style={stylesResults.subText}>Question</Text>
+                <View style={stylesResults.questionBox}>
+                  <Text style={stylesResults.questionText}>{question}</Text>
+                </View>
+              </>
+            ) : null}
 
-const stylesResults = StyleSheet.create({
+            <View style={stylesResults.tabs}>
+              {["Primary", "Resulting"].map((tabName) => {
+                const active = tab === tabName;
+                return (
+                  <Pressable
+                    key={tabName}
+                    onPress={() => setTab(tabName)}
+                    style={[stylesResults.tabBtn, active && { backgroundColor: palette.gold }]}
+                  >
+                    <Text style={[stylesResults.tabText, active && { color: palette.white }]}>
+                      {tabName}
+                    </Text>
+                  </Pressable>
+                );
+              })}
+            </View>
+
+            {tab === "Primary" ? (
+              <HexagramCard
+                item={primary}
+                onPress={() => openReading(primary, primaryLines, "primary")}
+              />
+            ) : (
+              <HexagramCard
+                item={resulting}
+                onPress={() => openReading(resulting, resultingLines, "resulting")}
+              />
+            )}
+
+            {primary ? (
+              <GoldButton
+                full
+                onPress={handleJournal}
+                icon={<Ionicons name="create-outline" size={18} color={palette.white} />}
+              >
+                Add to Journal
+              </GoldButton>
+            ) : null}
+
+            <ReadingModal
+              visible={show}
+              onClose={() => setShow(false)}
+              hex={selected?.hex}
+              lines={selected?.lines || []}
+              variant={selected?.variant}
+              changingSummaries={selected?.changingSummaries || []}
+            />
+          </ScrollView>
+          <SimpleGuidanceModal
+            visible={primaryGuidanceVisible}
+            onClose={closePrimaryGuidance}
+            onLearnMore={handleGuidanceLearnMore}
+            text={GUIDANCE_MESSAGES.Primary}
+          />
+          <SimpleGuidanceModal
+            visible={resultingGuidanceVisible}
+            onClose={closeResultingGuidance}
+            onLearnMore={handleGuidanceLearnMore}
+            text={GUIDANCE_MESSAGES.Resulting}
+          />
+        </SafeAreaView>
+      </GradientBackground>
+    );
+  }
+
+  const stylesResults = StyleSheet.create({
   sectionTitle: {
     fontFamily: fonts.title,
     fontSize: 26,
@@ -6135,20 +6184,19 @@ function GuideScreen({ navigation }) {
     </SectionCard>
   );
 
-  const renderContent = () => {
-    if (tab === "History") return renderHistory();
-    if (tab === "Glossary") return renderGlossary();
-    return renderGuidance();
-  };
+    const renderContent = () => {
+      if (tab === "History") return renderHistory();
+      if (tab === "Glossary") return renderGlossary();
+      return renderGuidance();
+    };
 
-  return (
-    <GradientBackground>
-      <SafeAreaView style={{ flex: 1 }}>
-        <HelpButton onPress={openGuidance} />
-        <ScrollView
-          contentContainerStyle={{
-            paddingHorizontal: theme.space(2.5),
-            paddingBottom: theme.space(3),
+    return (
+      <GradientBackground>
+        <SafeAreaView style={{ flex: 1 }}>
+          <ScrollView
+            contentContainerStyle={{
+              paddingHorizontal: theme.space(2.5),
+              paddingBottom: theme.space(3),
             paddingTop: theme.space(2.5) + screenTopPadding,
           }}
         >
