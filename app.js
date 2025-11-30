@@ -1515,14 +1515,21 @@ function InsightsOverviewScreen({ navigation }) {
 
   const [hexagrams, setHexagrams] = useState([]);
   const [errorMessage, setErrorMessage] = useState(null);
-  const { visible: guidanceVisible, openGuidance, closeGuidance } = useGuidanceOnce(
-    "hasSeenGuidance_Insights"
-  );
+  const { visible: guidanceVisible, hasSeenGuidance, openGuidance, closeGuidance } =
+    useGuidanceOnce("hasSeenGuidance_Insights");
 
   const handleGuidanceLearnMore = useCallback(() => {
     closeGuidance();
     navigation?.navigate("Guide");
   }, [closeGuidance, navigation]);
+
+  useFocusEffect(
+    useCallback(() => {
+      if (!hasSeenGuidance && !guidanceVisible) {
+        openGuidance();
+      }
+    }, [guidanceVisible, hasSeenGuidance, openGuidance])
+  );
 
   useEffect(() => {
     let active = true;
@@ -4406,14 +4413,21 @@ function CastScreen({ route, navigation }) {
   const [all, setAll] = useState([]);
   const [lines, setLines] = useState([]);
   const [isDone, setIsDone] = useState(false);
-  const { visible: guidanceVisible, openGuidance, closeGuidance } = useGuidanceOnce(
-    "hasSeenGuidance_Casting"
-  );
+  const { visible: guidanceVisible, hasSeenGuidance, openGuidance, closeGuidance } =
+    useGuidanceOnce("hasSeenGuidance_Casting");
 
   const handleGuidanceLearnMore = useCallback(() => {
     closeGuidance();
     navigation.navigate("Guide");
   }, [closeGuidance, navigation]);
+
+  useFocusEffect(
+    useCallback(() => {
+      if (!hasSeenGuidance && !guidanceVisible) {
+        openGuidance();
+      }
+    }, [guidanceVisible, hasSeenGuidance, openGuidance])
+  );
 
   useEffect(() => {
     loadHexagrams().then(setAll);
@@ -4875,6 +4889,29 @@ function ResultsScreen({ navigation, route }) {
       tab,
     ]);
 
+    useFocusEffect(
+      useCallback(() => {
+        if (!hasSeenPrimaryGuidance && !primaryGuidanceVisible && tab === "Primary") {
+          openPrimaryGuidance();
+        }
+        if (
+          !hasSeenResultingGuidance &&
+          !resultingGuidanceVisible &&
+          tab === "Resulting"
+        ) {
+          openResultingGuidance();
+        }
+      }, [
+        hasSeenPrimaryGuidance,
+        hasSeenResultingGuidance,
+        openPrimaryGuidance,
+        openResultingGuidance,
+        primaryGuidanceVisible,
+        resultingGuidanceVisible,
+        tab,
+      ])
+    );
+
     const handleGuidanceLearnMore = useCallback(() => {
       if (tab === "Resulting") {
         closeResultingGuidance();
@@ -5057,14 +5094,21 @@ function LibraryScreen({ navigation }) {
   const [selected, setSelected] = useState(null);
   const [search, setSearch] = useState("");
   const { width } = useWindowDimensions();
-  const { visible: guidanceVisible, openGuidance, closeGuidance } = useGuidanceOnce(
-    "hasSeenGuidance_Library"
-  );
+  const { visible: guidanceVisible, hasSeenGuidance, openGuidance, closeGuidance } =
+    useGuidanceOnce("hasSeenGuidance_Library");
 
   const handleGuidanceLearnMore = useCallback(() => {
     closeGuidance();
     navigation?.navigate("Guide");
   }, [closeGuidance, navigation]);
+
+  useFocusEffect(
+    useCallback(() => {
+      if (!hasSeenGuidance && !guidanceVisible) {
+        openGuidance();
+      }
+    }, [guidanceVisible, hasSeenGuidance, openGuidance])
+  );
 
   useEffect(() => {
     let active = true;
@@ -5258,14 +5302,21 @@ function JournalListScreen({ navigation, route }) {
   const [search, setSearch] = useState("");
   const [highlightId, setHighlightId] = useState(null);
   const listRef = useRef(null);
-  const { visible: guidanceVisible, openGuidance, closeGuidance } = useGuidanceOnce(
-    "hasSeenGuidance_Journal"
-  );
+  const { visible: guidanceVisible, hasSeenGuidance, openGuidance, closeGuidance } =
+    useGuidanceOnce("hasSeenGuidance_Journal");
 
   const handleGuidanceLearnMore = useCallback(() => {
     closeGuidance();
     navigation.navigate("Guide");
   }, [closeGuidance, navigation]);
+
+  useFocusEffect(
+    useCallback(() => {
+      if (!hasSeenGuidance && !guidanceVisible) {
+        openGuidance();
+      }
+    }, [guidanceVisible, hasSeenGuidance, openGuidance])
+  );
 
   const goHome = () => {
     const tabNav = navigation.getParent();
