@@ -39,6 +39,7 @@ import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
+import { SafeAreaProvider, useSafeAreaInsets } from "react-native-safe-area-context";
 import {
   useFonts as useMarcellus,
   Marcellus_400Regular,
@@ -189,6 +190,22 @@ const fonts = {
   title: "Marcellus_400Regular",
   body: "Lora_400Regular",
   bodyBold: "Lora_600SemiBold",
+};
+
+const GUIDANCE_MESSAGES = {
+  Home:
+    "Tap the question mark anytime you need help. Here you can learn how casting works and explore the I Ching at your own pace.",
+  Casting:
+    "Cast the I Ching by tapping six times. Your six lines form a Primary Hexagram, and changing lines create a Resulting Hexagram.",
+  Primary: "The Primary Hexagram reflects your present moment. Tap the hexagram to explore its meaning.",
+  Resulting:
+    "The Resulting Hexagram shows possible movement or future change. Tap to explore its meaning.",
+  Journal:
+    "Your journal keeps all your readings together. Revisit past casts and add personal reflections.",
+  Library:
+    "Explore all 64 hexagrams. Tap any hexagram to learn its core themes and wisdom.",
+  Insights:
+    "Track reading streaks, frequently cast hexagrams, and your activity over time.",
 };
 
 const screenTopPadding = Platform.select({
@@ -2122,6 +2139,43 @@ function fullChangingLineSummaries(hex) {
     .filter(Boolean);
 }
 
+// 🧭 Guidance helpers
+function useGuidanceOnce(storageKey) {
+  const [visible, setVisible] = useState(false);
+  const [hasSeenGuidance, setHasSeenGuidance] = useState(false);
+
+  useEffect(() => {
+    let active = true;
+    const checkGuidance = async () => {
+      try {
+        const storedValue = await AsyncStorage.getItem(storageKey);
+        const alreadySeen = storedValue === "true";
+        if (!active) return;
+        setHasSeenGuidance(alreadySeen);
+        if (!alreadySeen) {
+          setVisible(true);
+          await AsyncStorage.setItem(storageKey, "true");
+          if (active) {
+            setHasSeenGuidance(true);
+          }
+        }
+      } catch (error) {
+        console.log("Guidance flag error:", error?.message || error);
+      }
+    };
+
+    checkGuidance();
+    return () => {
+      active = false;
+    };
+  }, [storageKey]);
+
+  const openGuidance = useCallback(() => setVisible(true), []);
+  const closeGuidance = useCallback(() => setVisible(false), []);
+
+  return { visible, hasSeenGuidance, openGuidance, closeGuidance };
+}
+
 // 🗒️ Journal context
 const JournalContext = createContext();
 
@@ -2721,6 +2775,125 @@ const deleteAccountButtonStyles = StyleSheet.create({
   label: {
     fontFamily: fonts.bodyBold,
     fontSize: 16,
+    color: palette.white,
+  },
+});
+
+// ℹ️ Guidance UI
+function SimpleGuidanceModal({ visible, onClose, onLearnMore, text }) {
+  return (
+    <Modal
+      visible={visible}
+      transparent
+      animationType="fade"
+      onRequestClose={onClose}
+    >
+      <Pressable style={guidanceStyles.backdrop} onPress={onClose}>
+        <Pressable
+          onPress={(event) => event.stopPropagation()}
+          style={guidanceStyles.card}
+        >
+          <Pressable style={guidanceStyles.closeButton} onPress={onClose} hitSlop={8}>
+            <Text style={guidanceStyles.closeText}>Close</Text>
+          </Pressable>
+          <Text style={guidanceStyles.title}>Guidance</Text>
+          <Text style={guidanceStyles.message}>{text}</Text>
+          <GoldButton full onPress={onLearnMore}>
+            Learn More
+          </GoldButton>
+        </Pressable>
+      </Pressable>
+    </Modal>
+  );
+}
+
+function HelpButton({ onPress }) {
+  const insets = useSafeAreaInsets();
+  const topOffset = Math.max(theme.space(1), insets.top + theme.space(0.5));
+
+  return (
+    <Pressable
+      onPress={onPress}
+      hitSlop={10}
+      style={({ pressed }) => [
+        guidanceStyles.helpButton,
+        { top: topOffset, left: theme.space(1.25) },
+        pressed && { opacity: 0.9 },
+      ]}
+    >
+      <Ionicons name="help-circle-outline" size={18} color={palette.white} />
+      <Text style={guidanceStyles.helpLabel}>Help</Text>
+    </Pressable>
+  );
+}
+
+const guidanceStyles = StyleSheet.create({
+  backdrop: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.25)",
+    alignItems: "center",
+    justifyContent: "center",
+    padding: theme.space(2.5),
+  },
+  card: {
+    width: "100%",
+    maxWidth: 360,
+    backgroundColor: palette.goldLight,
+    borderRadius: theme.radius,
+    padding: theme.space(2),
+    borderWidth: 1,
+    borderColor: palette.goldDeep,
+    shadowColor: palette.goldDeep,
+    shadowOpacity: 0.18,
+    shadowRadius: 14,
+    shadowOffset: { width: 0, height: 8 },
+    elevation: 10,
+  },
+  title: {
+    fontFamily: fonts.title,
+    fontSize: 22,
+    color: palette.ink,
+    textAlign: "center",
+    marginBottom: theme.space(1),
+  },
+  message: {
+    fontFamily: fonts.body,
+    fontSize: 15,
+    color: palette.ink,
+    lineHeight: 22,
+    textAlign: "center",
+    marginBottom: theme.space(1.5),
+  },
+  closeButton: {
+    position: "absolute",
+    top: theme.space(1),
+    right: theme.space(1),
+    padding: theme.space(0.5),
+  },
+  closeText: {
+    fontFamily: fonts.bodyBold,
+    color: palette.ink,
+    fontSize: 12,
+  },
+  helpButton: {
+    position: "absolute",
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: theme.space(1.25),
+    paddingVertical: theme.space(0.75),
+    backgroundColor: palette.gold,
+    borderRadius: theme.radius,
+    shadowColor: palette.goldDeep,
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 6,
+    zIndex: 10,
+  },
+  helpLabel: {
+    marginLeft: 6,
+    fontFamily: fonts.bodyBold,
+    fontSize: 14,
     color: palette.white,
   },
 });
@@ -3887,6 +4060,9 @@ function HomeScreen({ navigation, route }) {
   const { session, profile, loadingProfile, signOut, refreshProfile } = useAuth();
   const { premiumActive: premiumEntitlementActive, coreActive: coreEntitlementActive } =
     useRevenueCat();
+  const { visible: guidanceVisible, openGuidance, closeGuidance } = useGuidanceOnce(
+    "hasSeenGuidance_Home"
+  );
 
   const hasProfile = Boolean(profile);
   const profileEmail = hasProfile
@@ -3949,6 +4125,7 @@ function HomeScreen({ navigation, route }) {
         keyboardVerticalOffset={Platform.OS === "ios" ? 80 : 0}
       >
         <SafeAreaView style={{ flex: 1 }}>
+          <HelpButton onPress={openGuidance} />
           <ScrollView
             contentContainerStyle={stylesHome.container}
             keyboardShouldPersistTaps="handled"
@@ -4051,6 +4228,12 @@ function HomeScreen({ navigation, route }) {
               </Pressable>
             </Pressable>
           </Modal>
+          <SimpleGuidanceModal
+            visible={guidanceVisible}
+            onClose={closeGuidance}
+            onLearnMore={handleGuidanceLearnMore}
+            text={GUIDANCE_MESSAGES.Home}
+          />
         </SafeAreaView>
       </KeyboardAvoidingView>
     </GradientBackground>
@@ -4197,6 +4380,14 @@ function CastScreen({ route, navigation }) {
   const [all, setAll] = useState([]);
   const [lines, setLines] = useState([]);
   const [isDone, setIsDone] = useState(false);
+  const { visible: guidanceVisible, openGuidance, closeGuidance } = useGuidanceOnce(
+    "hasSeenGuidance_Casting"
+  );
+
+  const handleGuidanceLearnMore = useCallback(() => {
+    closeGuidance();
+    navigation.navigate("Guide");
+  }, [closeGuidance, navigation]);
 
   useEffect(() => {
     loadHexagrams().then(setAll);
@@ -4228,6 +4419,7 @@ function CastScreen({ route, navigation }) {
   return (
     <GradientBackground>
       <SafeAreaView style={{ flex: 1 }}>
+        <HelpButton onPress={openGuidance} />
         <ScrollView
           contentContainerStyle={{
             paddingHorizontal: theme.space(2.5),
@@ -4320,6 +4512,12 @@ function CastScreen({ route, navigation }) {
             </GoldButton>
           ) : null}
         </ScrollView>
+        <SimpleGuidanceModal
+          visible={guidanceVisible}
+          onClose={closeGuidance}
+          onLearnMore={handleGuidanceLearnMore}
+          text={GUIDANCE_MESSAGES.Casting}
+        />
       </SafeAreaView>
     </GradientBackground>
   );
@@ -4617,6 +4815,14 @@ function ResultsScreen({ navigation, route }) {
   const [show, setShow] = useState(false);
   const [selected, setSelected] = useState(null);
   const { addEntry } = useJournal();
+  const { visible: guidanceVisible, openGuidance, closeGuidance } = useGuidanceOnce(
+    "hasSeenGuidance_Resulting"
+  );
+
+  const handleGuidanceLearnMore = useCallback(() => {
+    closeGuidance();
+    navigation.navigate("Guide");
+  }, [closeGuidance, navigation]);
 
   const openReading = (hex, lines, variant) => {
     if (!hex) return;
@@ -4654,6 +4860,7 @@ function ResultsScreen({ navigation, route }) {
   return (
     <GradientBackground>
       <SafeAreaView style={{ flex: 1 }}>
+        <HelpButton onPress={openGuidance} />
         <ScrollView
           contentContainerStyle={{
             paddingHorizontal: theme.space(2.5),
@@ -4719,6 +4926,12 @@ function ResultsScreen({ navigation, route }) {
             changingSummaries={selected?.changingSummaries || []}
           />
         </ScrollView>
+        <SimpleGuidanceModal
+          visible={guidanceVisible}
+          onClose={closeGuidance}
+          onLearnMore={handleGuidanceLearnMore}
+          text={GUIDANCE_MESSAGES.Resulting}
+        />
       </SafeAreaView>
     </GradientBackground>
   );
@@ -6377,6 +6590,11 @@ function SettingsScreen({ navigation }) {
     navigation.navigate("Premium");
   }, [navigation]);
 
+  const handleGuidanceLearnMore = useCallback(() => {
+    closeGuidance();
+    navigation.navigate("Guide");
+  }, [closeGuidance, navigation]);
+
   const handleRateApp = useCallback(async () => {
     const iosStore = "https://apps.apple.com/app/id000000000";
     const androidStore = "https://play.google.com/store/apps/details?id=com.example";
@@ -6918,18 +7136,20 @@ export default function App() {
   const navigationKey = passwordResetRequested ? "reset-flow" : session ? "main" : "auth";
 
   return (
-    <AuthContext.Provider value={authValue}>
-      <RevenueCatContext.Provider value={revenueCatValue || defaultRevenueCatState}>
-        <JournalProvider>
-          <NavigationContainer ref={navigationRef} key={navigationKey} theme={navTheme}>
-            {passwordResetRequested || !session ? (
-              <AuthStackScreen passwordResetRequested={passwordResetRequested} />
-            ) : (
-              <MainTabs />
-            )}
-          </NavigationContainer>
-        </JournalProvider>
-      </RevenueCatContext.Provider>
-    </AuthContext.Provider>
+    <SafeAreaProvider>
+      <AuthContext.Provider value={authValue}>
+        <RevenueCatContext.Provider value={revenueCatValue || defaultRevenueCatState}>
+          <JournalProvider>
+            <NavigationContainer ref={navigationRef} key={navigationKey} theme={navTheme}>
+              {passwordResetRequested || !session ? (
+                <AuthStackScreen passwordResetRequested={passwordResetRequested} />
+              ) : (
+                <MainTabs />
+              )}
+            </NavigationContainer>
+          </JournalProvider>
+        </RevenueCatContext.Provider>
+      </AuthContext.Provider>
+    </SafeAreaProvider>
   );
 }
