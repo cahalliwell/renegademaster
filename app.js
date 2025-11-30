@@ -6782,11 +6782,6 @@ function SettingsScreen({ navigation }) {
     navigation.navigate("Premium");
   }, [navigation]);
 
-  const handleGuidanceLearnMore = useCallback(() => {
-    closeGuidance();
-    navigation.navigate("Guide");
-  }, [closeGuidance, navigation]);
-
   const handleRateApp = useCallback(async () => {
     const iosStore = "https://apps.apple.com/app/id000000000";
     const androidStore = "https://play.google.com/store/apps/details?id=com.example";
