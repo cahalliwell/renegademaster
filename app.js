@@ -4064,6 +4064,11 @@ function HomeScreen({ navigation, route }) {
     "hasSeenGuidance_Home"
   );
 
+  const handleGuidanceLearnMore = useCallback(() => {
+    closeGuidance();
+    navigation.navigate("Guide");
+  }, [closeGuidance, navigation]);
+
   const hasProfile = Boolean(profile);
   const profileEmail = hasProfile
     ? profile.email || session?.user?.email || "Not set"
