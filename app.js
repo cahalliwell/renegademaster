@@ -1515,8 +1515,13 @@ function InsightsOverviewScreen({ navigation }) {
 
   const [hexagrams, setHexagrams] = useState([]);
   const [errorMessage, setErrorMessage] = useState(null);
-  const { visible: guidanceVisible, hasSeenGuidance, openGuidance, closeGuidance } =
-    useGuidanceOnce("hasSeenGuidance_Insights");
+  const {
+    visible: guidanceVisible,
+    hasSeenGuidance,
+    openGuidance,
+    closeGuidance,
+    hasLoaded: guidanceLoaded,
+  } = useGuidanceOnce("hasSeenGuidance_Insights");
 
   const handleGuidanceLearnMore = useCallback(() => {
     closeGuidance();
@@ -1525,10 +1530,10 @@ function InsightsOverviewScreen({ navigation }) {
 
   useFocusEffect(
     useCallback(() => {
-      if (!hasSeenGuidance && !guidanceVisible) {
+      if (guidanceLoaded && !hasSeenGuidance && !guidanceVisible) {
         openGuidance();
       }
-    }, [guidanceVisible, hasSeenGuidance, openGuidance])
+    }, [guidanceLoaded, guidanceVisible, hasSeenGuidance, openGuidance])
   );
 
   useEffect(() => {
@@ -2165,6 +2170,7 @@ function useGuidanceOnce(storageKey, options = {}) {
   const { autoShow = true } = options;
   const [visible, setVisible] = useState(false);
   const [hasSeenGuidance, setHasSeenGuidance] = useState(false);
+  const [hasLoaded, setHasLoaded] = useState(false);
 
   useEffect(() => {
     let active = true;
@@ -2180,6 +2186,9 @@ function useGuidanceOnce(storageKey, options = {}) {
           if (active) {
             setHasSeenGuidance(true);
           }
+        }
+        if (active) {
+          setHasLoaded(true);
         }
       } catch (error) {
         console.log("Guidance flag error:", error?.message || error);
@@ -2198,10 +2207,11 @@ function useGuidanceOnce(storageKey, options = {}) {
       AsyncStorage.setItem(storageKey, "true").catch(() => {});
       setHasSeenGuidance(true);
     }
+    setHasLoaded(true);
   }, [hasSeenGuidance, storageKey]);
   const closeGuidance = useCallback(() => setVisible(false), []);
 
-  return { visible, hasSeenGuidance, openGuidance, closeGuidance };
+  return { visible, hasSeenGuidance, openGuidance, closeGuidance, hasLoaded };
 }
 
 // 🗒️ Journal context
@@ -4413,8 +4423,13 @@ function CastScreen({ route, navigation }) {
   const [all, setAll] = useState([]);
   const [lines, setLines] = useState([]);
   const [isDone, setIsDone] = useState(false);
-  const { visible: guidanceVisible, hasSeenGuidance, openGuidance, closeGuidance } =
-    useGuidanceOnce("hasSeenGuidance_Casting");
+  const {
+    visible: guidanceVisible,
+    hasSeenGuidance,
+    openGuidance,
+    closeGuidance,
+    hasLoaded: guidanceLoaded,
+  } = useGuidanceOnce("hasSeenGuidance_Casting");
 
   const handleGuidanceLearnMore = useCallback(() => {
     closeGuidance();
@@ -4423,10 +4438,10 @@ function CastScreen({ route, navigation }) {
 
   useFocusEffect(
     useCallback(() => {
-      if (!hasSeenGuidance && !guidanceVisible) {
+      if (guidanceLoaded && !hasSeenGuidance && !guidanceVisible) {
         openGuidance();
       }
-    }, [guidanceVisible, hasSeenGuidance, openGuidance])
+    }, [guidanceLoaded, guidanceVisible, hasSeenGuidance, openGuidance])
   );
 
   useEffect(() => {
@@ -4860,19 +4875,27 @@ function ResultsScreen({ navigation, route }) {
       hasSeenGuidance: hasSeenPrimaryGuidance,
       openGuidance: openPrimaryGuidance,
       closeGuidance: closePrimaryGuidance,
+      hasLoaded: primaryGuidanceLoaded,
     } = useGuidanceOnce("hasSeenGuidance_Primary", { autoShow: false });
     const {
       visible: resultingGuidanceVisible,
       hasSeenGuidance: hasSeenResultingGuidance,
       openGuidance: openResultingGuidance,
       closeGuidance: closeResultingGuidance,
+      hasLoaded: resultingGuidanceLoaded,
     } = useGuidanceOnce("hasSeenGuidance_Resulting", { autoShow: false });
 
     useEffect(() => {
-      if (tab === "Primary" && !hasSeenPrimaryGuidance && !primaryGuidanceVisible) {
+      if (
+        primaryGuidanceLoaded &&
+        tab === "Primary" &&
+        !hasSeenPrimaryGuidance &&
+        !primaryGuidanceVisible
+      ) {
         openPrimaryGuidance();
       }
       if (
+        resultingGuidanceLoaded &&
         tab === "Resulting" &&
         !hasSeenResultingGuidance &&
         !resultingGuidanceVisible
@@ -4880,6 +4903,8 @@ function ResultsScreen({ navigation, route }) {
         openResultingGuidance();
       }
     }, [
+      primaryGuidanceLoaded,
+      resultingGuidanceLoaded,
       hasSeenPrimaryGuidance,
       hasSeenResultingGuidance,
       openPrimaryGuidance,
@@ -4891,10 +4916,16 @@ function ResultsScreen({ navigation, route }) {
 
     useFocusEffect(
       useCallback(() => {
-        if (!hasSeenPrimaryGuidance && !primaryGuidanceVisible && tab === "Primary") {
+        if (
+          primaryGuidanceLoaded &&
+          !hasSeenPrimaryGuidance &&
+          !primaryGuidanceVisible &&
+          tab === "Primary"
+        ) {
           openPrimaryGuidance();
         }
         if (
+          resultingGuidanceLoaded &&
           !hasSeenResultingGuidance &&
           !resultingGuidanceVisible &&
           tab === "Resulting"
@@ -4902,6 +4933,8 @@ function ResultsScreen({ navigation, route }) {
           openResultingGuidance();
         }
       }, [
+        primaryGuidanceLoaded,
+        resultingGuidanceLoaded,
         hasSeenPrimaryGuidance,
         hasSeenResultingGuidance,
         openPrimaryGuidance,
@@ -5094,8 +5127,13 @@ function LibraryScreen({ navigation }) {
   const [selected, setSelected] = useState(null);
   const [search, setSearch] = useState("");
   const { width } = useWindowDimensions();
-  const { visible: guidanceVisible, hasSeenGuidance, openGuidance, closeGuidance } =
-    useGuidanceOnce("hasSeenGuidance_Library");
+  const {
+    visible: guidanceVisible,
+    hasSeenGuidance,
+    openGuidance,
+    closeGuidance,
+    hasLoaded: guidanceLoaded,
+  } = useGuidanceOnce("hasSeenGuidance_Library");
 
   const handleGuidanceLearnMore = useCallback(() => {
     closeGuidance();
@@ -5104,10 +5142,10 @@ function LibraryScreen({ navigation }) {
 
   useFocusEffect(
     useCallback(() => {
-      if (!hasSeenGuidance && !guidanceVisible) {
+      if (guidanceLoaded && !hasSeenGuidance && !guidanceVisible) {
         openGuidance();
       }
-    }, [guidanceVisible, hasSeenGuidance, openGuidance])
+    }, [guidanceLoaded, guidanceVisible, hasSeenGuidance, openGuidance])
   );
 
   useEffect(() => {
@@ -5302,8 +5340,13 @@ function JournalListScreen({ navigation, route }) {
   const [search, setSearch] = useState("");
   const [highlightId, setHighlightId] = useState(null);
   const listRef = useRef(null);
-  const { visible: guidanceVisible, hasSeenGuidance, openGuidance, closeGuidance } =
-    useGuidanceOnce("hasSeenGuidance_Journal");
+  const {
+    visible: guidanceVisible,
+    hasSeenGuidance,
+    openGuidance,
+    closeGuidance,
+    hasLoaded: guidanceLoaded,
+  } = useGuidanceOnce("hasSeenGuidance_Journal");
 
   const handleGuidanceLearnMore = useCallback(() => {
     closeGuidance();
@@ -5312,10 +5355,10 @@ function JournalListScreen({ navigation, route }) {
 
   useFocusEffect(
     useCallback(() => {
-      if (!hasSeenGuidance && !guidanceVisible) {
+      if (guidanceLoaded && !hasSeenGuidance && !guidanceVisible) {
         openGuidance();
       }
-    }, [guidanceVisible, hasSeenGuidance, openGuidance])
+    }, [guidanceLoaded, guidanceVisible, hasSeenGuidance, openGuidance])
   );
 
   const goHome = () => {
