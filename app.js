@@ -2868,20 +2868,19 @@ function SimpleGuidanceModal({ visible, onClose, onLearnMore, text }) {
 
 function HelpButton({ onPress }) {
   const insets = useSafeAreaInsets();
-  const topOffset = Math.max(theme.space(1), insets.top + theme.space(0.5));
+  const topOffset = Math.max(theme.space(1.5), insets.top + theme.space(1));
 
   return (
     <Pressable
       onPress={onPress}
-      hitSlop={10}
+      hitSlop={12}
       style={({ pressed }) => [
         guidanceStyles.helpButton,
         { top: topOffset, left: theme.space(1.25) },
         pressed && { opacity: 0.9 },
       ]}
     >
-      <Ionicons name="help-circle-outline" size={18} color={palette.white} />
-      <Text style={guidanceStyles.helpLabel}>?</Text>
+      <Ionicons name="help-circle-outline" size={22} color={palette.white} />
     </Pressable>
   );
 }
@@ -2936,10 +2935,10 @@ const guidanceStyles = StyleSheet.create({
   },
   helpButton: {
     position: "absolute",
-    flexDirection: "row",
     alignItems: "center",
-    paddingHorizontal: theme.space(1.25),
-    paddingVertical: theme.space(0.75),
+    justifyContent: "center",
+    paddingHorizontal: theme.space(1),
+    paddingVertical: theme.space(1),
     backgroundColor: palette.gold,
     borderRadius: theme.radius,
     shadowColor: palette.goldDeep,
@@ -2948,12 +2947,6 @@ const guidanceStyles = StyleSheet.create({
     shadowOffset: { width: 0, height: 4 },
     elevation: 6,
     zIndex: 10,
-  },
-  helpLabel: {
-    marginLeft: 6,
-    fontFamily: fonts.bodyBold,
-    fontSize: 14,
-    color: palette.white,
   },
 });
 
@@ -4336,9 +4329,9 @@ const stylesHome = StyleSheet.create({
   headerRow: {
     alignItems: "flex-end",
     paddingTop: Platform.select({
-      ios: theme.space(1.5),
-      android: theme.space(2),
-      default: theme.space(1.5),
+      ios: theme.space(1),
+      android: theme.space(1.25),
+      default: theme.space(1),
     }),
   },
   mainContent: {
@@ -4396,6 +4389,7 @@ const stylesHome = StyleSheet.create({
   menuButton: {
     padding: theme.space(0.5),
     alignSelf: "flex-end",
+    marginTop: -theme.space(0.25),
   },
   menuOverlay: {
     flex: 1,
@@ -5332,7 +5326,7 @@ const stylesLibrary = StyleSheet.create({
     flex: 1,
     padding: theme.space(2.5),
     paddingBottom: theme.space(3),
-    paddingTop: theme.space(2.5) + screenTopPadding,
+    paddingTop: theme.space(4.5) + screenTopPadding,
   },
   content: {
     flex: 1,
@@ -5363,8 +5357,8 @@ const stylesLibrary = StyleSheet.create({
     fontSize: 26,
     color: palette.ink,
     marginBottom: 6,
-    textAlign: "right",
-    alignSelf: "flex-end",
+    textAlign: "left",
+    alignSelf: "flex-start",
   },
   subtitle: {
     fontFamily: fonts.body,
@@ -6998,7 +6992,9 @@ function SettingsScreen({ navigation }) {
               </Pressable>
               <View style={stylesSettings.rowDivider} />
               <Pressable
-                onPress={() => handleOpenLink("https://aichinginsights.com/privacy")}
+                onPress={() =>
+                  handleOpenLink("https://sites.google.com/view/ichinginsightspp/home")
+                }
                 style={stylesSettings.row}
               >
                 <Text style={stylesSettings.rowLabel}>Privacy Policy</Text>
@@ -7006,7 +7002,9 @@ function SettingsScreen({ navigation }) {
               </Pressable>
               <View style={stylesSettings.rowDivider} />
               <Pressable
-                onPress={() => handleOpenLink("https://aichinginsights.com/terms")}
+                onPress={() =>
+                  handleOpenLink("https://sites.google.com/view/ai-ching-insightstc/home")
+                }
                 style={stylesSettings.row}
               >
                 <Text style={stylesSettings.rowLabel}>Terms and Conditions</Text>
