@@ -1472,7 +1472,7 @@ function MilestonesCard({ streak, summary, monthlyData, loading }) {
   );
 }
 
-function InsightsOverviewScreen() {
+function InsightsOverviewScreen({ navigation }) {
   const { isPremium } = useAuth();
   const premiumMember = Boolean(isPremium);
   const { premiumPriceString } = useRevenueCat();
@@ -1515,6 +1515,14 @@ function InsightsOverviewScreen() {
 
   const [hexagrams, setHexagrams] = useState([]);
   const [errorMessage, setErrorMessage] = useState(null);
+  const { visible: guidanceVisible, openGuidance, closeGuidance } = useGuidanceOnce(
+    "hasSeenGuidance_Insights"
+  );
+
+  const handleGuidanceLearnMore = useCallback(() => {
+    closeGuidance();
+    navigation?.navigate("Guide");
+  }, [closeGuidance, navigation]);
 
   useEffect(() => {
     let active = true;
@@ -1654,38 +1662,135 @@ function InsightsOverviewScreen() {
     weeklyError,
   ]);
 
-  if (!premiumMember) {
-    return (
-      <LinearGradient
-        colors={[palette.parchmentA, palette.parchmentB, palette.parchmentGold]}
-        start={{ x: 0.2, y: 0 }}
-        end={{ x: 0.8, y: 1 }}
-        style={stylesInsights.gradient}
-      >
-        <ScrollView
-          contentContainerStyle={[
-            stylesInsights.container,
-            { paddingBottom: theme.space(6) },
-          ]}
-          showsVerticalScrollIndicator={false}
-        >
-          <Text style={stylesInsights.screenTitle}>Insight Overview</Text>
-          <Text style={stylesInsights.screenSubtitle}>
-            A reflective glance at your journey with the I Ching.
-          </Text>
-          <UpgradeCallout
-            title="Premium analytics"
-            description={
-              premiumPriceString
-                ? `Unlock weekly and monthly patterns, your casting streak, and the top hexagrams you draw most often. Premium is ${premiumPriceString} per month.`
-                : "Unlock weekly and monthly patterns, your casting streak, and the top hexagrams you draw most often with Premium membership."
-            }
-            icon="stats-chart-outline"
-          />
-        </ScrollView>
-      </LinearGradient>
-    );
-  }
+  const freeContent = (
+    <ScrollView
+      contentContainerStyle={[
+        stylesInsights.container,
+        { paddingBottom: theme.space(6) },
+      ]}
+      showsVerticalScrollIndicator={false}
+    >
+      <Text style={stylesInsights.screenTitle}>Insight Overview</Text>
+      <Text style={stylesInsights.screenSubtitle}>
+        A reflective glance at your journey with the I Ching.
+      </Text>
+      <UpgradeCallout
+        title="Premium analytics"
+        description={
+          premiumPriceString
+            ? `Unlock weekly and monthly patterns, your casting streak, and the top hexagrams you draw most often. Premium is ${premiumPriceString} per month.`
+            : "Unlock weekly and monthly patterns, your casting streak, and the top hexagrams you draw most often with Premium membership."
+        }
+        icon="stats-chart-outline"
+      />
+    </ScrollView>
+  );
+
+  const premiumContent = (
+    <ScrollView
+      contentContainerStyle={[
+        stylesInsights.container,
+        { paddingBottom: theme.space(6) },
+      ]}
+      showsVerticalScrollIndicator={false}
+    >
+      <Text style={stylesInsights.screenTitle}>Insight Overview</Text>
+      <Text style={stylesInsights.screenSubtitle}>
+        A reflective glance at your journey with the I Ching.
+      </Text>
+      {errorMessage ? <Text style={stylesInsights.errorText}>{errorMessage}</Text> : null}
+
+      <View style={stylesInsights.summaryGrid}>
+        {summaryRows.map((rowCards, rowIndex) => (
+          <View
+            key={`summary-row-${rowIndex}`}
+            style={[
+              stylesInsights.summaryRow,
+              rowIndex === summaryRows.length - 1 && { marginBottom: 0 },
+            ]}
+          >
+            {rowCards.map((card, columnIndex) => {
+              const cardIndex = rowIndex * 2 + columnIndex;
+              return (
+                <SummaryCard
+                  key={card.title}
+                  title={card.title}
+                  subtitle={card.subtitle}
+                  value={card.value}
+                  loading={card.loading}
+                  accent={cardIndex === 1 ? palette.goldLight : palette.gold}
+                  delay={cardIndex * 80}
+                  column={columnIndex}
+                  isSolo={rowCards.length === 1}
+                />
+              );
+            })}
+          </View>
+        ))}
+      </View>
+
+      <MotionView style={stylesInsights.counterCard} {...motionProps(120)}>
+        <Text style={stylesInsights.sectionTitle}>Reading cadence</Text>
+        <CounterRow
+          label="Today"
+          value={counts.readings_today}
+          loading={countsLoading}
+        />
+        <CounterRow
+          label="This week"
+          value={counts.readings_week}
+          loading={countsLoading}
+        />
+        <CounterRow
+          label="This month"
+          value={counts.readings_month}
+          loading={countsLoading}
+        />
+        <CounterRow
+          label="This year"
+          value={counts.readings_year}
+          loading={countsLoading}
+        />
+        <CounterRow
+          label="Total"
+          value={counts.readings_total}
+          loading={countsLoading}
+        />
+      </MotionView>
+
+      <MotionView style={stylesInsights.chartCard} {...motionProps(160)}>
+        <ReadingPatternsCard
+          monthlyData={monthlyData}
+          weeklyData={weeklyData}
+          totalYearReadings={totalYearReadings}
+          loading={monthlyLoading || weeklyLoading}
+        />
+      </MotionView>
+
+      <MotionView style={stylesInsights.chartCard} {...motionProps(200)}>
+        <TopHexagramsTextList
+          data={topCastsData}
+          loading={topCastsLoading}
+          hexagrams={hexagrams}
+        />
+      </MotionView>
+
+      <MotionView style={stylesInsights.chartCard} {...motionProps(240)}>
+        <MonthlyActivityRow data={monthlyData} loading={monthlyLoading} />
+      </MotionView>
+
+      <MotionView style={stylesInsights.chartCard} {...motionProps(280)}>
+        <MilestonesCard
+          streak={streak}
+          summary={summary}
+          monthlyData={monthlyData}
+          loading={summaryLoading || streakLoading || monthlyLoading}
+        />
+      </MotionView>
+    </ScrollView>
+  );
+
+  const content = premiumMember ? premiumContent : freeContent;
 
   return (
     <LinearGradient
@@ -1694,107 +1799,16 @@ function InsightsOverviewScreen() {
       end={{ x: 0.8, y: 1 }}
       style={stylesInsights.gradient}
     >
-      <ScrollView
-        contentContainerStyle={[
-          stylesInsights.container,
-          { paddingBottom: theme.space(6) },
-        ]}
-        showsVerticalScrollIndicator={false}
-      >
-        <Text style={stylesInsights.screenTitle}>Insight Overview</Text>
-        <Text style={stylesInsights.screenSubtitle}>
-          A reflective glance at your journey with the I Ching.
-        </Text>
-        {errorMessage ? <Text style={stylesInsights.errorText}>{errorMessage}</Text> : null}
-
-        <View style={stylesInsights.summaryGrid}>
-          {summaryRows.map((rowCards, rowIndex) => (
-            <View
-              key={`summary-row-${rowIndex}`}
-              style={[
-                stylesInsights.summaryRow,
-                rowIndex === summaryRows.length - 1 && { marginBottom: 0 },
-              ]}
-            >
-              {rowCards.map((card, columnIndex) => {
-                const cardIndex = rowIndex * 2 + columnIndex;
-                return (
-                  <SummaryCard
-                    key={card.title}
-                    title={card.title}
-                    subtitle={card.subtitle}
-                    value={card.value}
-                    loading={card.loading}
-                    accent={cardIndex === 1 ? palette.goldLight : palette.gold}
-                    delay={cardIndex * 80}
-                    column={columnIndex}
-                    isSolo={rowCards.length === 1}
-                  />
-                );
-              })}
-            </View>
-          ))}
-        </View>
-
-        <MotionView style={stylesInsights.counterCard} {...motionProps(120)}>
-          <Text style={stylesInsights.sectionTitle}>Reading cadence</Text>
-          <CounterRow
-            label="Today"
-            value={counts.readings_today}
-            loading={countsLoading}
-          />
-          <CounterRow
-            label="This week"
-            value={counts.readings_week}
-            loading={countsLoading}
-          />
-          <CounterRow
-            label="This month"
-            value={counts.readings_month}
-            loading={countsLoading}
-          />
-          <CounterRow
-            label="This year"
-            value={counts.readings_year}
-            loading={countsLoading}
-          />
-          <CounterRow
-            label="Total"
-            value={counts.readings_total}
-            loading={countsLoading}
-          />
-        </MotionView>
-
-        <MotionView style={stylesInsights.chartCard} {...motionProps(160)}>
-          <ReadingPatternsCard
-            monthlyData={monthlyData}
-            weeklyData={weeklyData}
-            totalYearReadings={totalYearReadings}
-            loading={monthlyLoading || weeklyLoading}
-          />
-        </MotionView>
-
-        <MotionView style={stylesInsights.chartCard} {...motionProps(200)}>
-          <TopHexagramsTextList
-            data={topCastsData}
-            loading={topCastsLoading}
-            hexagrams={hexagrams}
-          />
-        </MotionView>
-
-        <MotionView style={stylesInsights.chartCard} {...motionProps(240)}>
-          <MonthlyActivityRow data={monthlyData} loading={monthlyLoading} />
-        </MotionView>
-
-        <MotionView style={stylesInsights.chartCard} {...motionProps(280)}>
-          <MilestonesCard
-            streak={streak}
-            summary={summary}
-            monthlyData={monthlyData}
-            loading={summaryLoading || streakLoading || monthlyLoading}
-          />
-        </MotionView>
-      </ScrollView>
+      <SafeAreaView style={{ flex: 1 }}>
+        <HelpButton onPress={openGuidance} />
+        {content}
+        <SimpleGuidanceModal
+          visible={guidanceVisible}
+          onClose={closeGuidance}
+          onLearnMore={handleGuidanceLearnMore}
+          text={GUIDANCE_MESSAGES.Insights}
+        />
+      </SafeAreaView>
     </LinearGradient>
   );
 }
@@ -2793,14 +2807,14 @@ function SimpleGuidanceModal({ visible, onClose, onLearnMore, text }) {
           onPress={(event) => event.stopPropagation()}
           style={guidanceStyles.card}
         >
-          <Pressable style={guidanceStyles.closeButton} onPress={onClose} hitSlop={8}>
-            <Text style={guidanceStyles.closeText}>Close</Text>
-          </Pressable>
           <Text style={guidanceStyles.title}>Guidance</Text>
           <Text style={guidanceStyles.message}>{text}</Text>
-          <GoldButton full onPress={onLearnMore}>
-            Learn More
+          <GoldButton full onPress={onClose}>
+            Close
           </GoldButton>
+          <Pressable style={guidanceStyles.linkButton} onPress={onLearnMore} hitSlop={8}>
+            <Text style={guidanceStyles.linkText}>Learn more in Guidance, History & Glossary</Text>
+          </Pressable>
         </Pressable>
       </Pressable>
     </Modal>
@@ -2864,16 +2878,16 @@ const guidanceStyles = StyleSheet.create({
     textAlign: "center",
     marginBottom: theme.space(1.5),
   },
-  closeButton: {
-    position: "absolute",
-    top: theme.space(1),
-    right: theme.space(1),
-    padding: theme.space(0.5),
+  linkButton: {
+    marginTop: theme.space(1),
+    alignItems: "center",
   },
-  closeText: {
+  linkText: {
     fontFamily: fonts.bodyBold,
-    color: palette.ink,
-    fontSize: 12,
+    color: palette.goldDeep,
+    fontSize: 14,
+    textDecorationLine: "underline",
+    textAlign: "center",
   },
   helpButton: {
     position: "absolute",
@@ -4988,12 +5002,20 @@ const stylesResults = StyleSheet.create({
 });
 
 // 📚 Library screen
-function LibraryScreen() {
+function LibraryScreen({ navigation }) {
   const [hexagrams, setHexagrams] = useState([]);
   const [show, setShow] = useState(false);
   const [selected, setSelected] = useState(null);
   const [search, setSearch] = useState("");
   const { width } = useWindowDimensions();
+  const { visible: guidanceVisible, openGuidance, closeGuidance } = useGuidanceOnce(
+    "hasSeenGuidance_Library"
+  );
+
+  const handleGuidanceLearnMore = useCallback(() => {
+    closeGuidance();
+    navigation?.navigate("Guide");
+  }, [closeGuidance, navigation]);
 
   useEffect(() => {
     let active = true;
@@ -5035,6 +5057,7 @@ function LibraryScreen() {
   return (
     <GradientBackground>
       <SafeAreaView style={{ flex: 1 }}>
+        <HelpButton onPress={openGuidance} />
         <View style={stylesLibrary.container}>
           <View style={stylesLibrary.content}>
             <View style={stylesLibrary.header}>
@@ -5092,6 +5115,12 @@ function LibraryScreen() {
           lines={[]}
           variant="library"
           changingSummaries={selected?.summaries || []}
+        />
+        <SimpleGuidanceModal
+          visible={guidanceVisible}
+          onClose={closeGuidance}
+          onLearnMore={handleGuidanceLearnMore}
+          text={GUIDANCE_MESSAGES.Library}
         />
       </SafeAreaView>
     </GradientBackground>
@@ -5180,6 +5209,14 @@ function JournalListScreen({ navigation, route }) {
   const [search, setSearch] = useState("");
   const [highlightId, setHighlightId] = useState(null);
   const listRef = useRef(null);
+  const { visible: guidanceVisible, openGuidance, closeGuidance } = useGuidanceOnce(
+    "hasSeenGuidance_Journal"
+  );
+
+  const handleGuidanceLearnMore = useCallback(() => {
+    closeGuidance();
+    navigation.navigate("Guide");
+  }, [closeGuidance, navigation]);
 
   const goHome = () => {
     const tabNav = navigation.getParent();
@@ -5262,6 +5299,7 @@ function JournalListScreen({ navigation, route }) {
   return (
     <GradientBackground>
       <SafeAreaView style={{ flex: 1 }}>
+        <HelpButton onPress={openGuidance} />
         <View style={stylesJournal.container}>
           <Text style={stylesJournal.title}>Journal</Text>
           <View style={stylesJournal.searchBar}>
@@ -5300,6 +5338,12 @@ function JournalListScreen({ navigation, route }) {
             Ask Another Question
           </GoldButton>
         </View>
+        <SimpleGuidanceModal
+          visible={guidanceVisible}
+          onClose={closeGuidance}
+          onLearnMore={handleGuidanceLearnMore}
+          text={GUIDANCE_MESSAGES.Journal}
+        />
       </SafeAreaView>
     </GradientBackground>
   );
@@ -6100,6 +6144,7 @@ function GuideScreen({ navigation }) {
   return (
     <GradientBackground>
       <SafeAreaView style={{ flex: 1 }}>
+        <HelpButton onPress={openGuidance} />
         <ScrollView
           contentContainerStyle={{
             paddingHorizontal: theme.space(2.5),
