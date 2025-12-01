@@ -1690,9 +1690,6 @@ function InsightsOverviewScreen({ navigation }) {
       ]}
       showsVerticalScrollIndicator={false}
     >
-      <View style={stylesInsights.headerRow}>
-        <HelpButton onPress={openGuidance} />
-      </View>
       <Text style={stylesInsights.screenTitle}>Insight Overview</Text>
       <Text style={stylesInsights.screenSubtitle}>
         A reflective glance at your journey with the I Ching.
@@ -1717,9 +1714,6 @@ function InsightsOverviewScreen({ navigation }) {
       ]}
       showsVerticalScrollIndicator={false}
     >
-      <View style={stylesInsights.headerRow}>
-        <HelpButton onPress={openGuidance} />
-      </View>
       <Text style={stylesInsights.screenTitle}>Insight Overview</Text>
       <Text style={stylesInsights.screenSubtitle}>
         A reflective glance at your journey with the I Ching.
@@ -1845,12 +1839,6 @@ const stylesInsights = StyleSheet.create({
   container: {
     padding: theme.space(3),
     paddingTop: theme.space(5) + screenTopPadding,
-  },
-  headerRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "flex-start",
-    marginBottom: theme.space(1.5),
   },
   screenTitle: {
     fontFamily: fonts.title,
@@ -5277,9 +5265,6 @@ function LibraryScreen({ navigation }) {
       <SafeAreaView style={{ flex: 1 }}>
         <View style={stylesLibrary.container}>
           <View style={stylesLibrary.content}>
-            <View style={stylesLibrary.headerRow}>
-              <HelpButton onPress={openGuidance} />
-            </View>
             <View style={stylesLibrary.header}>
               <Text style={stylesLibrary.title}>Library</Text>
               <Text style={stylesLibrary.subtitle}>
@@ -5352,19 +5337,12 @@ const stylesLibrary = StyleSheet.create({
     flex: 1,
     padding: theme.space(2.5),
     paddingBottom: theme.space(3),
-    paddingTop: theme.space(4.5) + screenTopPadding,
+    paddingTop: theme.space(2.5) + screenTopPadding,
   },
   content: {
     flex: 1,
   },
-  headerRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "flex-start",
-    marginBottom: theme.space(1.5),
-  },
   header: {
-    marginTop: theme.space(1.5),
     marginBottom: theme.space(3),
   },
   searchBar: {
@@ -5390,8 +5368,6 @@ const stylesLibrary = StyleSheet.create({
     fontSize: 26,
     color: palette.ink,
     marginBottom: 6,
-    textAlign: "left",
-    alignSelf: "flex-start",
   },
   subtitle: {
     fontFamily: fonts.body,
