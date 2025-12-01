@@ -195,14 +195,15 @@ const fonts = {
 
 const GUIDANCE_MESSAGES = {
   Home:
-    "Tap the question mark anytime you need help. Here you can learn how casting works and explore the I Ching at your own pace.",
+    "Begin by taking a moment to settle your mind. Approach the I Ching with sincere and respectful intention. Hold your question gently in your thoughts and allow it to form clearly. When you feel ready, enter your question into the text box and tap 'Submit'.",
   Casting:
-    "Cast the I Ching by tapping six times. Your six lines form a Primary Hexagram, and changing lines create a Resulting Hexagram.",
-  Primary: "The Primary Hexagram reflects your present moment. Tap the hexagram to explore its meaning.",
+    "Cast the I Ching by tapping six times. Each tap forms one line of your hexagram. Black lines represent your current situation or energy. Gold lines show changing lines, shifts or future influences. Your cast reveals a Primary Hexagram, and if you have changing lines, a Resulting Hexagram as well. Upgrade for access to Manual Casting",
+  Primary:
+    "The Primary Hexagram reflects your present moment, the themes, challenges, or wisdom surrounding your question right now. Tap the hexagram to explore its meaning. If your cast includes any changing lines, the I Ching will also generate a Resulting Hexagram.",
   Resulting:
-    "The Resulting Hexagram shows possible movement or future change. Tap to explore its meaning.",
+    "The Resulting Hexagram shows where things may be headed if the changing lines unfold. It offers guidance based on movement and transformation. Tap the hexagram to read the interpretation. When you're ready, tap 'Add to Journal' to save your insights.",
   Journal:
-    "Your journal keeps all your readings together. Revisit past casts and add personal reflections.",
+    "Your journal keeps all your readings in one place. Revisit past casts, follow your progress, and record personal notes or reflections. Upgrade for AI Ching to provide personalised interpretations and summaries tailored to your question and situation.",
   Library:
     "Explore all 64 hexagrams. Tap any hexagram to learn its core themes and wisdom.",
   Insights:
