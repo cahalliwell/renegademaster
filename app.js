@@ -1690,6 +1690,9 @@ function InsightsOverviewScreen({ navigation }) {
       ]}
       showsVerticalScrollIndicator={false}
     >
+      <View style={stylesInsights.headerRow}>
+        <HelpButton onPress={openGuidance} />
+      </View>
       <Text style={stylesInsights.screenTitle}>Insight Overview</Text>
       <Text style={stylesInsights.screenSubtitle}>
         A reflective glance at your journey with the I Ching.
@@ -1714,6 +1717,9 @@ function InsightsOverviewScreen({ navigation }) {
       ]}
       showsVerticalScrollIndicator={false}
     >
+      <View style={stylesInsights.headerRow}>
+        <HelpButton onPress={openGuidance} />
+      </View>
       <Text style={stylesInsights.screenTitle}>Insight Overview</Text>
       <Text style={stylesInsights.screenSubtitle}>
         A reflective glance at your journey with the I Ching.
@@ -1820,7 +1826,6 @@ function InsightsOverviewScreen({ navigation }) {
       style={stylesInsights.gradient}
     >
       <SafeAreaView style={{ flex: 1 }}>
-        <HelpButton onPress={openGuidance} />
         {content}
         <SimpleGuidanceModal
           visible={guidanceVisible}
@@ -1840,6 +1845,12 @@ const stylesInsights = StyleSheet.create({
   container: {
     padding: theme.space(3),
     paddingTop: theme.space(5) + screenTopPadding,
+  },
+  headerRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "flex-start",
+    marginBottom: theme.space(1.5),
   },
   screenTitle: {
     fontFamily: fonts.title,
@@ -2866,19 +2877,12 @@ function SimpleGuidanceModal({ visible, onClose, onLearnMore, text }) {
   );
 }
 
-function HelpButton({ onPress }) {
-  const insets = useSafeAreaInsets();
-  const topOffset = Math.max(theme.space(1.5), insets.top + theme.space(1));
-
+function HelpButton({ onPress, style }) {
   return (
     <Pressable
       onPress={onPress}
       hitSlop={12}
-      style={({ pressed }) => [
-        guidanceStyles.helpButton,
-        { top: topOffset, left: theme.space(1.25) },
-        pressed && { opacity: 0.9 },
-      ]}
+      style={({ pressed }) => [guidanceStyles.helpButton, style, pressed && { opacity: 0.9 }]}
     >
       <Ionicons name="help-circle-outline" size={22} color={palette.white} />
     </Pressable>
@@ -2934,7 +2938,6 @@ const guidanceStyles = StyleSheet.create({
     textAlign: "center",
   },
   helpButton: {
-    position: "absolute",
     alignItems: "center",
     justifyContent: "center",
     paddingHorizontal: theme.space(1),
@@ -4207,12 +4210,12 @@ function HomeScreen({ navigation, route }) {
         keyboardVerticalOffset={Platform.OS === "ios" ? 80 : 0}
       >
         <SafeAreaView style={{ flex: 1 }}>
-          <HelpButton onPress={openGuidance} />
           <ScrollView
             contentContainerStyle={stylesHome.container}
             keyboardShouldPersistTaps="handled"
           >
             <View style={stylesHome.headerRow}>
+              <HelpButton onPress={openGuidance} />
               <Pressable
                 onPress={() => setMenuVisible(true)}
                 style={stylesHome.menuButton}
@@ -4327,12 +4330,15 @@ const stylesHome = StyleSheet.create({
     paddingTop: theme.space(2.5) + screenTopPadding,
   },
   headerRow: {
-    alignItems: "flex-end",
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
     paddingTop: Platform.select({
       ios: theme.space(1),
       android: theme.space(1.25),
       default: theme.space(1),
     }),
+    marginBottom: theme.space(1.5),
   },
   mainContent: {
     flexGrow: 1,
@@ -4519,7 +4525,6 @@ function CastScreen({ route, navigation }) {
   return (
     <GradientBackground>
       <SafeAreaView style={{ flex: 1 }}>
-        <HelpButton onPress={openGuidance} />
         <ScrollView
           contentContainerStyle={{
             paddingHorizontal: theme.space(2.5),
@@ -4527,7 +4532,10 @@ function CastScreen({ route, navigation }) {
             paddingTop: theme.space(2.5) + screenTopPadding,
           }}
         >
-          <Text style={stylesCast.sectionTitle}>Casting</Text>
+          <View style={stylesCast.headerRow}>
+            <HelpButton onPress={openGuidance} />
+            <Text style={stylesCast.sectionTitle}>Casting</Text>
+          </View>
           {question ? (
             <>
               <Text style={stylesCast.subText}>Question</Text>
@@ -4788,6 +4796,12 @@ function ManualCastingScreen({ route, navigation }) {
 }
 
 const stylesCast = StyleSheet.create({
+  headerRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: 12,
+  },
   sectionTitle: {
     fontFamily: fonts.title,
     fontSize: 26,
@@ -5044,9 +5058,6 @@ function ResultsScreen({ navigation, route }) {
     return (
       <GradientBackground>
         <SafeAreaView style={{ flex: 1 }}>
-          <HelpButton
-            onPress={tab === "Resulting" ? openResultingGuidance : openPrimaryGuidance}
-          />
           <ScrollView
             contentContainerStyle={{
               paddingHorizontal: theme.space(2.5),
@@ -5054,7 +5065,14 @@ function ResultsScreen({ navigation, route }) {
               paddingTop: theme.space(2.5) + screenTopPadding,
             }}
           >
-            <Text style={stylesResults.sectionTitle}>Results</Text>
+            <View style={stylesResults.headerRow}>
+              <HelpButton
+                onPress={
+                  tab === "Resulting" ? openResultingGuidance : openPrimaryGuidance
+                }
+              />
+              <Text style={stylesResults.sectionTitle}>Results</Text>
+            </View>
             {question ? (
               <>
                 <Text style={stylesResults.subText}>Question</Text>
@@ -5129,7 +5147,13 @@ function ResultsScreen({ navigation, route }) {
     );
   }
 
-  const stylesResults = StyleSheet.create({
+const stylesResults = StyleSheet.create({
+  headerRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: theme.space(1.5),
+  },
   sectionTitle: {
     fontFamily: fonts.title,
     fontSize: 26,
@@ -5251,9 +5275,11 @@ function LibraryScreen({ navigation }) {
   return (
     <GradientBackground>
       <SafeAreaView style={{ flex: 1 }}>
-        <HelpButton onPress={openGuidance} />
         <View style={stylesLibrary.container}>
           <View style={stylesLibrary.content}>
+            <View style={stylesLibrary.headerRow}>
+              <HelpButton onPress={openGuidance} />
+            </View>
             <View style={stylesLibrary.header}>
               <Text style={stylesLibrary.title}>Library</Text>
               <Text style={stylesLibrary.subtitle}>
@@ -5331,7 +5357,14 @@ const stylesLibrary = StyleSheet.create({
   content: {
     flex: 1,
   },
+  headerRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "flex-start",
+    marginBottom: theme.space(1.5),
+  },
   header: {
+    marginTop: theme.space(1.5),
     marginBottom: theme.space(3),
   },
   searchBar: {
@@ -5514,9 +5547,11 @@ function JournalListScreen({ navigation, route }) {
   return (
     <GradientBackground>
       <SafeAreaView style={{ flex: 1 }}>
-        <HelpButton onPress={openGuidance} />
         <View style={stylesJournal.container}>
-          <Text style={stylesJournal.title}>Journal</Text>
+          <View style={stylesJournal.headerRow}>
+            <HelpButton onPress={openGuidance} />
+            <Text style={stylesJournal.title}>Journal</Text>
+          </View>
           <View style={stylesJournal.searchBar}>
             <Ionicons name="search" size={18} color={palette.inkMuted} />
             <TextInput
@@ -5569,6 +5604,12 @@ const stylesJournal = StyleSheet.create({
     flex: 1,
     padding: theme.space(2.5),
     paddingTop: theme.space(2.5) + screenTopPadding,
+  },
+  headerRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: theme.space(1.5),
   },
   title: {
     fontFamily: fonts.title,
